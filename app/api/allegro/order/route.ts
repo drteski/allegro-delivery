@@ -33,17 +33,22 @@ export async function POST(request: Request) {
       },
     );
   } catch (err) {
-    console.log(err.response?.data.errors[0].message);
-    return new NextResponse(
-      JSON.stringify({
-        message: err.response?.data.errors[0].message.replace(
-          "Checkout form",
-          "Order",
-        ),
-      }),
-      {
-        status: 404,
-      },
-    );
+    if (axios.isAxiosError(err)) {
+      return new NextResponse(
+        JSON.stringify({
+          message: err.response?.data.errors[0].message.replace(
+            "Checkout form",
+            "Order",
+          ),
+        }),
+        {
+          status: 404,
+        },
+      );
+    } else {
+      return new NextResponse(JSON.stringify({}), {
+        status: 500,
+      });
+    }
   }
 }

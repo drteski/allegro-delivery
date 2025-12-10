@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import fs from "node:fs";
 import { ConfigAllegro } from "@/lib/types";
-
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } },
-) {
+type Params = Promise<{ id: string }>;
+export async function GET(request: Request, { params }: { params: Params }) {
   const { id } = await params;
   const savedConfig = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
   return new NextResponse(
@@ -20,13 +17,10 @@ export async function GET(
   );
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: Request, { params }: { params: Params }) {
   const savedConfig = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
   const account = await request.json();
-  const { id } = params;
+  const { id } = await params;
   const existingConfig = savedConfig.accounts.find(
     (item: ConfigAllegro) => item.id === parseInt(id, 10),
   );
@@ -69,10 +63,7 @@ export async function POST(
   return new NextResponse(JSON.stringify({ message: "ok" }), { status: 200 });
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(request: Request, { params }: { params: Params }) {
   const savedConfig = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
   const { id } = await params;
   fs.writeFileSync(

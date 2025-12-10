@@ -53,7 +53,13 @@ export async function POST(request: Request) {
 
     return new NextResponse(JSON.stringify({}), { status: 200 });
   } catch (err) {
-    console.log(err.response?.data || err.message);
+    if (axios.isAxiosError(err)) {
+      console.error("Axios error:", err.response?.data ?? err.message);
+    } else if (err instanceof Error) {
+      console.error("Error:", err.message);
+    } else {
+      console.error("Unknown error:", err);
+    }
     return new NextResponse(JSON.stringify({}), { status: 200 });
   }
 }
