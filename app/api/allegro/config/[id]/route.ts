@@ -26,7 +26,7 @@ export async function POST(
 ) {
   const savedConfig = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
   const account = await request.json();
-  const { id } = await params;
+  const { id } = params;
   const existingConfig = savedConfig.accounts.find(
     (item: ConfigAllegro) => item.id === parseInt(id, 10),
   );
