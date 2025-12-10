@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import fs from "node:fs";
-import { ConfigAllegro } from "@/lib/types";
 import axios from "axios";
+import prisma from "@/lib/db";
 
 export async function POST(request: Request) {
-  const savedConfig = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
   const account = await request.json();
-  const existingConfig = savedConfig.accounts.find(
-    (item: ConfigAllegro) => item.id === account.id,
-  );
+  const existingConfig = await prisma.account.findUnique({
+    where: { id: account.id },
+  });
   if (!existingConfig)
     return new NextResponse(JSON.stringify({ message: "Konto nie istnieje" }), {
       status: 200,
@@ -32,25 +30,14 @@ export async function POST(request: Request) {
         },
       })
       .then((res) => res.data);
-    fs.writeFileSync(
-      "./config.json",
-      JSON.stringify({
-        scope: savedConfig.scope,
-        accounts: [
-          ...savedConfig.accounts.filter(
-            (item: ConfigAllegro) => item.id !== account.id,
-          ),
-          {
-            ...account,
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token,
-            expiresIn: Date.now() + tokens.expires_in * 1000,
-          },
-        ].sort((a: ConfigAllegro, b: ConfigAllegro) => a.id - b.id),
-      }),
-      "utf-8",
-    );
-
+    await prisma.account.update({
+      where: { id: existingConfig.id },
+      data: {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiresIn: `${Date.now() + tokens.expires_in * 1000}`,
+      },
+    });
     return new NextResponse(JSON.stringify({}), { status: 200 });
   } catch (err) {
     if (axios.isAxiosError(err)) {

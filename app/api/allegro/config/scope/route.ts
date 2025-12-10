@@ -1,20 +1,9 @@
 import { NextResponse } from "next/server";
-import fs from "node:fs";
+import prisma from "@/lib/db";
 
 export async function POST(request: Request) {
-  const savedConfig = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
   const { scope } = await request.json();
-  fs.writeFileSync(
-    "./config.json",
-    JSON.stringify({
-      scope: scope
-        .split(" ")
-        .filter((item: string) => item !== "")
-        .join(" "),
-      accounts: savedConfig.accounts,
-    }),
-    "utf-8",
-  );
+  await prisma.config.update({ where: { id: 1 }, data: { scope } });
 
   return new NextResponse(JSON.stringify({ message: "ok" }), { status: 200 });
 }

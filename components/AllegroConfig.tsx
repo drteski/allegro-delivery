@@ -33,7 +33,7 @@ const AllegroConfig = ({ id, scope }: Data) => {
     const getConfig = async () => {
       await axios
         .get(`/api/allegro/config/${id}`)
-        .then((res) => setConfig(res.data.config));
+        .then((res) => setConfig(res.data.account));
     };
     getConfig();
   }, [id]);

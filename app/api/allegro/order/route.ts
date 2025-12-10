@@ -1,21 +1,19 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
-import { ConfigAllegro } from "@/lib/types";
-import fs from "node:fs";
+import prisma from "@/lib/db";
 
 export async function POST(request: Request) {
   const { orderId, accountId } = await request.json();
 
-  const savedConfig = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
-  const existingConfig = savedConfig.accounts.find(
-    (item: ConfigAllegro) => item.id === parseInt(accountId, 10),
-  );
+  const existingConfig = await prisma.account.findUnique({
+    where: { id: accountId },
+  });
 
   try {
     const orderInfo = await axios
       .get(`https://api.allegro.pl/order/checkout-forms/${orderId}`, {
         headers: {
-          Authorization: `Bearer ${existingConfig.accessToken}`,
+          Authorization: `Bearer ${existingConfig?.accessToken}`,
           Accept: "application/vnd.allegro.public.v1+json",
         },
       })
