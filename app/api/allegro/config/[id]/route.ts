@@ -22,6 +22,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
   const existingConfig = await prisma.account.findUnique({
     where: { id: parseInt(id, 10) },
   });
+  console.log(account);
   await prisma.account.update({
     where: { id: parseInt(id, 10) },
     data: {

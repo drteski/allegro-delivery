@@ -12,7 +12,7 @@ const useScope = () => {
         .then((res) => res.data.scope);
     },
   });
-  return { scope: data, isLoading, isError };
+  return { scope: data, isScopeLoading: isLoading, isError };
 };
 
 export default useScope;

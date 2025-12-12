@@ -1,15 +1,13 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+import AllegroConfigEdit from "@/components/AllegroConfigEdit";
 
 const ConfigPage = () => {
   const { id } = useParams();
-  const { data, isLoading } = useQuery({
-    queryKey: ["config"],
-    queryFn: () => {},
-  });
-  // <AllegroConfigEdit data={config} scope={scope} />
-  return <div>{isLoading ? "dupa" : id}</div>;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("accountId", String(id));
+  }
+  return <AllegroConfigEdit id={id} />;
 };
 
 export default ConfigPage;

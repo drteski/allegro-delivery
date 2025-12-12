@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { ParamValue } from "next/dist/server/request/params";
 
-const useAccount = ({ id }: { id: number }) => {
-  const { data, isLoading, isError } = useQuery({
+const useAccount = (id: ParamValue) => {
+  const { data, isLoading } = useQuery({
     queryKey: ["accounts", { id }],
     queryFn: async () => {
       return await axios
@@ -15,7 +16,6 @@ const useAccount = ({ id }: { id: number }) => {
   return {
     account: data,
     isAccountLoading: isLoading,
-    isAccountError: isError,
   };
 };
 

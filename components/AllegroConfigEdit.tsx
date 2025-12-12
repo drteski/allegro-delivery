@@ -4,192 +4,231 @@ import { format } from "date-fns";
 import { ConfigAllegro } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { ParamValue } from "next/dist/server/request/params";
+import useAccount from "@/hooks/useAccount";
+import useScope from "@/hooks/useScope";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Skeleton } from "./ui/skeleton";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-type Data = {
-  data: ConfigAllegro;
-  scope: string;
-};
-
-const AllegroConfigEdit = ({ data, scope }: Data) => {
-  const searchParams = useSearchParams();
+const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
+  const { account, isAccountLoading } = useAccount(id);
+  const [info, setInfo] = useState<string>("");
+  const { scope } = useScope();
   const router = useRouter();
-  const code = searchParams.get("code") ?? "";
-  const [newConfig, setNewConfig] = useState<ConfigAllegro>(() => ({
-    ...data,
-    authorizationCode: data.authorizationCode || code || "",
-  }));
-  const saveData = (partial: Partial<ConfigAllegro>) => {
-    setNewConfig((prevState) => ({ ...prevState, ...partial }));
-  };
+  const queryClient = useQueryClient();
+  const [newAccount, setNewConfig] = useState<ConfigAllegro | object>({});
 
-  const handleSave = async () => {
-    try {
-      console.log(newConfig);
-      await axios.post(`/api/allegro/config/${data.id}`, newConfig).then(() => {
-        router.refresh();
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const handleSave = useMutation({
+    mutationFn: async () =>
+      await axios.post(`/api/allegro/config/${id}`, { ...newAccount }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["accounts"] }),
+  });
+  const handleDelete = useMutation({
+    mutationFn: async () =>
+      await axios.delete(`/api/allegro/config/${account.id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      localStorage.removeItem("accountId");
+      router.push("/");
+    },
+  });
+
+  const handleGetTokens = useMutation({
+    mutationFn: async () =>
+      await axios
+        .post("/api/allegro/auth/get", { ...account, ...newAccount })
+        .then((res) => res.data),
+    onSuccess: (value) => {
+      console.log(value);
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      setInfo(value);
+    },
+  });
+
+  const handleRefreshTokens = useMutation({
+    mutationFn: async () =>
+      await axios
+        .post("/api/allegro/auth/refresh", {
+          ...account,
+          ...newAccount,
+        })
+        .then((res) => res.data),
+    onSuccess: (value) => {
+      console.log(value);
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      setInfo(value);
+    },
+  });
 
   useEffect(() => {
-    setNewConfig((prev) => {
-      localStorage.setItem(
-        "account",
-        JSON.stringify({
+    if (typeof window !== "undefined") {
+      const code = localStorage.getItem("authorizationCode") ?? "";
+      if (code !== "") {
+        setNewConfig((prev) => ({
           ...prev,
-          ...data,
-          authorizationCode:
-            data.authorizationCode || prev.authorizationCode || code || "",
-        }),
-      );
-      return {
-        ...prev,
-        ...data,
-        authorizationCode:
-          data.authorizationCode || prev.authorizationCode || code || "",
-      };
-    });
-    if (code) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("code");
-      window.history.replaceState(null, "", url.toString());
+          authorizationCode: code,
+        }));
+        localStorage.removeItem("authorizationCode");
+      }
     }
-  }, [data, code]);
+  }, []);
   return (
-    <div className="flex flex-col gap-4 border rounded-md p-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-medium">
-          {newConfig.name === "" ? "Nowe konto" : newConfig.name}
-        </h2>
+    <div className="flex flex-col gap-4 max-w-[800px]">
+      {isAccountLoading ? (
+        <Skeleton className="h-9" />
+      ) : (
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-medium flex h-9">
+            {account.name === "" ? "Nowe konto" : account.name}
+          </h2>
 
-        {scope !== "" && (
-          <>
-            {newConfig.clientId !== "" &&
-              newConfig.clientSecret !== "" &&
-              newConfig.redirectUri !== "" && (
-                <>
-                  {newConfig.authorizationCode === "" ? (
-                    <Button
-                      className="cursor-pointer"
-                      variant="secondary"
-                      asChild
-                    >
-                      <Link
-                        href={`https://allegro.pl/auth/oauth/authorize?response_type=code&client_id=${newConfig.clientId}&redirect_uri=${encodeURIComponent(newConfig.redirectUri)}&scope=${encodeURIComponent(scope)}`}
-                        target="_blank"
+          {scope !== "" && (
+            <>
+              {account.clientId !== "" &&
+                account.clientSecret !== "" &&
+                account.redirectUri !== "" && (
+                  <>
+                    {account.authorizationCode === "" ? (
+                      <Button
+                        className="cursor-pointer"
+                        variant="secondary"
+                        onClick={() =>
+                          router.push(
+                            `https://allegro.pl/auth/oauth/authorize?response_type=code&client_id=${account.clientId}&redirect_uri=${encodeURIComponent(account.redirectUri)}&scope=${encodeURIComponent(scope)}`,
+                          )
+                        }
                       >
                         Authorize
-                      </Link>
-                    </Button>
-                  ) : newConfig.authorizationCode !== "" &&
-                    newConfig.accessToken === "" ? (
-                    <Button
-                      className="cursor-pointer"
-                      variant="secondary"
-                      onClick={() => {
-                        axios
-                          .post("/api/allegro/auth/get", newConfig)
-                          .then(() => router.refresh());
-                      }}
-                    >
-                      Get Token
-                    </Button>
-                  ) : (
-                    <Button
-                      className="cursor-pointer"
-                      variant="secondary"
-                      onClick={() => {
-                        axios
-                          .post("/api/allegro/auth/refresh", newConfig)
-                          .then(() => router.refresh());
-                      }}
-                    >
-                      Refresh Tokens
-                    </Button>
-                  )}
-                </>
-              )}
-          </>
-        )}
-      </div>
-
-      <Input
-        placeholder="Konto"
-        value={newConfig.name}
-        onChange={(e) => saveData({ name: e.target.value })}
-      />
-      <Input
-        placeholder="Client ID"
-        value={newConfig.clientId}
-        onChange={(e) => saveData({ clientId: e.target.value })}
-      />
-      <Input
-        placeholder="Client Secret"
-        value={newConfig.clientSecret}
-        onChange={(e) => saveData({ clientSecret: e.target.value })}
-      />
-      <Input
-        placeholder="Redirect URL"
-        value={newConfig.redirectUri}
-        onChange={(e) => saveData({ redirectUri: e.target.value })}
-      />
-      <Input
-        placeholder="Authorization Code"
-        value={newConfig.authorizationCode}
-        onChange={(e) => saveData({ authorizationCode: e.target.value })}
-      />
-      <Input
-        placeholder="Access Token"
-        value={newConfig.accessToken}
-        onChange={(e) => saveData({ accessToken: e.target.value })}
-      />
-      <Input
-        placeholder="Refresh Token"
-        value={newConfig.refreshToken}
-        onChange={(e) => saveData({ refreshToken: e.target.value })}
-      />
-
-      <span className="text-sm">
-        Expires In:{" "}
-        {newConfig.expiresIn
-          ? format(new Date(Number(newConfig.expiresIn)), "dd-MM-yyyy HH:mm:ss")
-          : " ---"}
-      </span>
-
-      <div className="flex gap-4 justify-between">
-        <Button
-          variant="secondary"
-          className="cursor-pointer"
-          onClick={() => {
-            localStorage.removeItem("account");
-            router.refresh();
-          }}
-        >
-          Close
-        </Button>
-        <div className="flex gap-2">
-          <Button
-            className="cursor-pointer"
-            variant="destructive"
-            onClick={() =>
-              axios.delete(`/api/allegro/config/${newConfig.id}`).then(() => {
-                localStorage.removeItem("account");
-                router.refresh();
-              })
-            }
-          >
-            Delete
-          </Button>
-          <Button className="cursor-pointer" onClick={handleSave}>
-            Save
-          </Button>
+                      </Button>
+                    ) : account.authorizationCode !== "" &&
+                      account.accessToken === "" ? (
+                      <Button
+                        className="cursor-pointer"
+                        variant="secondary"
+                        onClick={() => handleGetTokens.mutate()}
+                      >
+                        Get Token
+                      </Button>
+                    ) : (
+                      <Button
+                        className="cursor-pointer"
+                        variant="secondary"
+                        onClick={() => handleRefreshTokens.mutate()}
+                      >
+                        Refresh Tokens
+                      </Button>
+                    )}
+                  </>
+                )}
+            </>
+          )}
         </div>
-      </div>
+      )}
+      {isAccountLoading ? (
+        <Skeleton className="h-[384px]" />
+      ) : (
+        <>
+          <Input
+            placeholder="Konto"
+            defaultValue={account.name}
+            onChange={(e) =>
+              setNewConfig((prev) => ({ ...prev, name: e.target.value }))
+            }
+          />
+          <Input
+            placeholder="Client ID"
+            defaultValue={account.clientId}
+            onChange={(e) =>
+              setNewConfig((prev) => ({ ...prev, clientId: e.target.value }))
+            }
+          />
+          <Input
+            placeholder="Client Secret"
+            defaultValue={account.clientSecret}
+            onChange={(e) =>
+              setNewConfig((prev) => ({
+                ...prev,
+                clientSecret: e.target.value,
+              }))
+            }
+          />
+          <Input
+            placeholder="Redirect URL"
+            defaultValue={account.redirectUri}
+            onChange={(e) =>
+              setNewConfig((prev) => ({ ...prev, redirectUri: e.target.value }))
+            }
+          />
+          <Input
+            placeholder="Authorization Code"
+            defaultValue={account.authorizationCode}
+            onChange={(e) =>
+              setNewConfig((prev) => ({
+                ...prev,
+                authorizationCode: e.target.value,
+              }))
+            }
+          />
+          <Input
+            placeholder="Access Token"
+            defaultValue={account.accessToken}
+            onChange={(e) =>
+              setNewConfig((prev) => ({ ...prev, accessToken: e.target.value }))
+            }
+          />
+          <Input
+            placeholder="Refresh Token"
+            defaultValue={account.refreshToken}
+            onChange={(e) =>
+              setNewConfig((prev) => ({
+                ...prev,
+                refreshToken: e.target.value,
+              }))
+            }
+          />
+          <span className="text-sm">
+            Expires In:{" "}
+            {account.expiresIn
+              ? format(
+                  new Date(Number(account.expiresIn)),
+                  "dd-MM-yyyy HH:mm:ss",
+                )
+              : " ---"}
+          </span>
+        </>
+      )}
+      {isAccountLoading ? (
+        <Skeleton className="h-9" />
+      ) : (
+        <div className="flex gap-4 justify-between">
+          <Button variant="secondary" className="cursor-pointer" asChild>
+            <Link
+              href={"/"}
+              onClick={() => localStorage.removeItem("accountId")}
+            >
+              Close
+            </Link>
+          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="cursor-pointer"
+              variant="destructive"
+              onClick={() => handleDelete.mutate()}
+            >
+              Delete
+            </Button>
+            <Button
+              className="cursor-pointer"
+              onClick={() => handleSave.mutate()}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
