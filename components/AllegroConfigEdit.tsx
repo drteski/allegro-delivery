@@ -44,6 +44,9 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
     onSuccess: (value) => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       setInfo(value);
+      setTimeout(() => {
+        setInfo("");
+      }, 1000);
     },
   });
 
@@ -58,6 +61,9 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
     onSuccess: (value) => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       setInfo(value);
+      setTimeout(() => {
+        setInfo("");
+      }, 1000);
     },
   });
 
@@ -210,7 +216,7 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
               Close
             </Link>
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {info !== "" && (
               <span className="text-neutral-500 text-sm">{info}</span>
             )}
