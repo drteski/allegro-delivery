@@ -45,7 +45,9 @@ export async function POST(request: Request) {
     if (axios.isAxiosError(err)) {
       console.error("Axios error:", err.response?.data ?? err.message);
       return new NextResponse(
-        JSON.stringify({ message: err.response?.data ?? err.message }),
+        JSON.stringify({
+          message: err.response?.data.error_description ?? err.message,
+        }),
         {
           status: 200,
         },

@@ -19,12 +19,20 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
   const { scope } = useScope();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [newAccount, setNewConfig] = useState<ConfigAllegro | object>({});
+  const [newAccount, setNewAccount] = useState<ConfigAllegro | object>({});
 
   const handleSave = useMutation({
     mutationFn: async () =>
-      await axios.post(`/api/allegro/config/${id}`, { ...newAccount }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["accounts"] }),
+      await axios
+        .post(`/api/allegro/config/${id}`, { ...newAccount })
+        .then((res) => res.data.message),
+    onSuccess: (value) => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      setInfo(value);
+      setTimeout(() => {
+        setInfo("");
+      }, 1000);
+    },
   });
   const handleDelete = useMutation({
     mutationFn: async () =>
@@ -43,6 +51,8 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
         .then((res) => res.data.message),
     onSuccess: (value) => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      console.log(account);
+      setNewAccount({ ...account });
       setInfo(value);
       setTimeout(() => {
         setInfo("");
@@ -71,7 +81,7 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
     if (typeof window !== "undefined") {
       const code = localStorage.getItem("authorizationCode") ?? "";
       if (code !== "") {
-        setNewConfig((prev) => ({
+        setNewAccount((prev) => ({
           ...prev,
           authorizationCode: code,
         }));
@@ -139,21 +149,21 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
             placeholder="Konto"
             defaultValue={account.name}
             onChange={(e) =>
-              setNewConfig((prev) => ({ ...prev, name: e.target.value }))
+              setNewAccount((prev) => ({ ...prev, name: e.target.value }))
             }
           />
           <Input
             placeholder="Client ID"
             defaultValue={account.clientId}
             onChange={(e) =>
-              setNewConfig((prev) => ({ ...prev, clientId: e.target.value }))
+              setNewAccount((prev) => ({ ...prev, clientId: e.target.value }))
             }
           />
           <Input
             placeholder="Client Secret"
             defaultValue={account.clientSecret}
             onChange={(e) =>
-              setNewConfig((prev) => ({
+              setNewAccount((prev) => ({
                 ...prev,
                 clientSecret: e.target.value,
               }))
@@ -163,14 +173,17 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
             placeholder="Redirect URL"
             defaultValue={account.redirectUri}
             onChange={(e) =>
-              setNewConfig((prev) => ({ ...prev, redirectUri: e.target.value }))
+              setNewAccount((prev) => ({
+                ...prev,
+                redirectUri: e.target.value,
+              }))
             }
           />
           <Input
             placeholder="Authorization Code"
             defaultValue={account.authorizationCode}
             onChange={(e) =>
-              setNewConfig((prev) => ({
+              setNewAccount((prev) => ({
                 ...prev,
                 authorizationCode: e.target.value,
               }))
@@ -180,14 +193,17 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
             placeholder="Access Token"
             defaultValue={account.accessToken}
             onChange={(e) =>
-              setNewConfig((prev) => ({ ...prev, accessToken: e.target.value }))
+              setNewAccount((prev) => ({
+                ...prev,
+                accessToken: e.target.value,
+              }))
             }
           />
           <Input
             placeholder="Refresh Token"
             defaultValue={account.refreshToken}
             onChange={(e) =>
-              setNewConfig((prev) => ({
+              setNewAccount((prev) => ({
                 ...prev,
                 refreshToken: e.target.value,
               }))
@@ -218,7 +234,7 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
           </Button>
           <div className="flex gap-2 items-center">
             {info !== "" && (
-              <span className="text-neutral-500 text-sm">{info}</span>
+              <span className="text-neutral-500 text-sm pr-4">{info}</span>
             )}
             <Button
               className="cursor-pointer"
