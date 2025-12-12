@@ -38,10 +38,18 @@ export async function POST(request: Request) {
       },
     });
 
-    return new NextResponse(JSON.stringify({}), { status: 200 });
+    return new NextResponse(JSON.stringify({ message: "Tokeny odświeżone" }), {
+      status: 200,
+    });
   } catch (err) {
     if (axios.isAxiosError(err)) {
       console.error("Axios error:", err.response?.data ?? err.message);
+      return new NextResponse(
+        JSON.stringify({ message: err.response?.data ?? err.message }),
+        {
+          status: 200,
+        },
+      );
     } else if (err instanceof Error) {
       console.error("Error:", err.message);
     } else {

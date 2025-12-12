@@ -5,30 +5,30 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-	provider = "prisma-client"
-	output   = "../lib/generated/prisma"
+    provider = "prisma-client"
+    output   = "../lib/generated/prisma"
 }
 
 datasource db {
-	provider = "postgresql"
+    provider = "postgresql"
 }
 
 model Config {
-	id       Int       @id
-	scope    String
-	accounts Account[]
+    id       Int       @id
+    scope    String
+    accounts Account[]
 }
 
 model Account {
-	id                Int    @id
-	name              String
-	clientId          String
-	clientSecret      String
-	redirectUri       String
-	authorizationCode String
-	accessToken       String
-	refreshToken      String
-	expiresIn         String
-	config            Config @relation(fields: [configId], references: [id], onUpdate: Cascade, onDelete: SetNull)
-	configId          Int
+    id                Int    @id @default(autoincrement())
+    name              String
+    clientId          String
+    clientSecret      String
+    redirectUri       String
+    authorizationCode String
+    accessToken       String
+    refreshToken      String
+    expiresIn         String
+    config            Config @relation(fields: [configId], references: [id], onUpdate: Cascade, onDelete: SetNull)
+    configId          Int
 }

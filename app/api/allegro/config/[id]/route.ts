@@ -22,10 +22,9 @@ export async function POST(request: Request, { params }: { params: Params }) {
   const existingConfig = await prisma.account.findUnique({
     where: { id: parseInt(id, 10) },
   });
-  await prisma.account.upsert({
+  await prisma.account.update({
     where: { id: parseInt(id, 10) },
-    create: { ...account, configId: 1 },
-    update: {
+    data: {
       ...account,
       accessToken:
         existingConfig?.accessToken !== account.accessToken

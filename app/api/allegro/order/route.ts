@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const existingConfig = await prisma.account.findUnique({
     where: { id: accountId },
   });
-
+  console.log(existingConfig);
   try {
     const orderInfo = await axios
       .get(`https://api.allegro.pl/order/checkout-forms/${orderId}`, {
@@ -18,6 +18,7 @@ export async function POST(request: Request) {
         },
       })
       .then((res) => res.data);
+    console.log(orderInfo);
     return new NextResponse(
       JSON.stringify({
         id: orderInfo.id,
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
     );
   } catch (err) {
     if (axios.isAxiosError(err)) {
+      console.log(err.response?.data);
       return new NextResponse(
         JSON.stringify({
           message: err.response?.data.errors[0].message.replace(

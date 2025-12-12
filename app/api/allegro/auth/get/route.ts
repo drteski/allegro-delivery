@@ -38,10 +38,18 @@ export async function POST(request: Request) {
         expiresIn: `${Date.now() + tokens.expires_in * 1000}`,
       },
     });
-    return new NextResponse(JSON.stringify({}), { status: 200 });
+    return new NextResponse(JSON.stringify({ message: "Tokeny pobrane" }), {
+      status: 200,
+    });
   } catch (err) {
     if (axios.isAxiosError(err)) {
       console.error("Axios error:", err.response?.data ?? err.message);
+      return new NextResponse(
+        JSON.stringify({ message: err.response?.data ?? err.message }),
+        {
+          status: 200,
+        },
+      );
     } else if (err instanceof Error) {
       console.error("Error:", err.message);
     } else {
