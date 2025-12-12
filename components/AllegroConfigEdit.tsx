@@ -40,9 +40,8 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
     mutationFn: async () =>
       await axios
         .post("/api/allegro/auth/get", { ...account, ...newAccount })
-        .then((res) => res.data),
+        .then((res) => res.data.message),
     onSuccess: (value) => {
-      console.log(value);
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       setInfo(value);
     },
@@ -55,9 +54,8 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
           ...account,
           ...newAccount,
         })
-        .then((res) => res.data),
+        .then((res) => res.data.message),
     onSuccess: (value) => {
-      console.log(value);
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       setInfo(value);
     },
@@ -213,6 +211,9 @@ const AllegroConfigEdit = ({ id }: { id: ParamValue }) => {
             </Link>
           </Button>
           <div className="flex gap-2">
+            {info !== "" && (
+              <span className="text-neutral-500 text-sm">{info}</span>
+            )}
             <Button
               className="cursor-pointer"
               variant="destructive"
